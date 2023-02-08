@@ -21,6 +21,7 @@
 import sys
 import socket
 import re
+import time
 # you may use urllib to encode data appropriately
 import urllib.parse
 
@@ -38,16 +39,18 @@ class HTTPClient(object):
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
+        print("Connected to %s on port %d" % (host, port))
         return None
 
     def get_code(self, data):
-        return None
+        return int(data.split(' ')[1])
 
     def get_headers(self,data):
         return None
 
     def get_body(self, data):
-        return None
+        body = data.split('\r\n\r\n')[1]
+        return body
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
@@ -68,13 +71,87 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        parsed_url = urllib.parse.urlparse(url)
+        netloc = parsed_url[1].split(':')
+        host = netloc[0]
+        if len(netloc) == 1:
+            port = 80
+        else:
+            port = int(netloc[1])
+        path = parsed_url[2]
+        if path == '':
+            path = '/'
+
+        request = "GET %s HTTP/1.1\r\n" \
+                  "Host: %s\r\n" \
+                  "Accept: */*\r\n" \
+                  "\r\n" % (path, host)
+        try:
+            self.connect(host, port)
+            self.sendall(request)
+            self.socket.shutdown(socket.SHUT_WR)
+            data = self.recvall(self.socket)
+
+            code = self.get_code(data)
+            body = self.get_body(data)
+        except socket.gaierror:
+            code = 404
+            body = None
+        else:
+            print(data)
+
+        self.close()
+
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        parsed_url = urllib.parse.urlparse(url)
+        netloc = parsed_url[1].split(':')
+        host = netloc[0]
+        if len(netloc) == 1:
+            port = 80
+        else:
+            port = int(netloc[1])
+        path = parsed_url[2]
+        if path == '':
+            path = '/'
+
+        content = ""
+
+        if args != None:
+            keys = args.keys()
+
+            i = 0
+            for key in keys:
+                i += 1
+                content += "%s=%s" % (key, args[key])
+                if i < len(keys):
+                    content += "&"
+
+        request = "POST %s HTTP/1.1\r\n" \
+                  "Host: %s\r\n" \
+                  "Accept: */*\r\n" \
+                  "Content-Type: application/x-www-form-urlencoded\r\n" \
+                  "Content-Length: %d\r\n" \
+                  "\r\n" \
+                  "%s\r\n" % (path, host, len(content.encode('utf-8')), content)
+
+        try:
+            self.connect(host, port)
+            self.sendall(request)
+            self.socket.shutdown(socket.SHUT_WR)
+            data = self.recvall(self.socket)
+
+            code = self.get_code(data)
+            body = self.get_body(data)
+        except socket.gaierror:
+            code = 404
+            body = None
+        else:
+            print(data)
+
+        self.close()
+
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
