@@ -85,12 +85,14 @@ class HTTPClient(object):
         request = "GET %s HTTP/1.1\r\n" \
                   "Host: %s\r\n" \
                   "Accept: */*\r\n" \
+                  "Connection: Close\r\n" \
                   "\r\n" % (path, host)
         try:
             self.connect(host, port)
             self.sendall(request)
-            self.socket.shutdown(socket.SHUT_WR)
+
             data = self.recvall(self.socket)
+            self.close()
 
             code = self.get_code(data)
             body = self.get_body(data)
@@ -99,8 +101,6 @@ class HTTPClient(object):
             body = None
         else:
             print(data)
-
-        self.close()
 
         return HTTPResponse(code, body)
 
@@ -139,8 +139,9 @@ class HTTPClient(object):
         try:
             self.connect(host, port)
             self.sendall(request)
-            self.socket.shutdown(socket.SHUT_WR)
+
             data = self.recvall(self.socket)
+            self.close()
 
             code = self.get_code(data)
             body = self.get_body(data)
@@ -149,8 +150,6 @@ class HTTPClient(object):
             body = None
         else:
             print(data)
-
-        self.close()
 
         return HTTPResponse(code, body)
 
