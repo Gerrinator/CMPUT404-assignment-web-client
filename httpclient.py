@@ -21,7 +21,6 @@
 import sys
 import socket
 import re
-import time
 # you may use urllib to encode data appropriately
 import urllib.parse
 
@@ -110,6 +109,7 @@ class HTTPClient(object):
         parsed_url = urllib.parse.urlparse(url)
         netloc = parsed_url[1].split(':')
         host = netloc[0]
+        query = parsed_url[4]
         if len(netloc) == 1:
             port = 80
         else:
@@ -130,6 +130,12 @@ class HTTPClient(object):
                 if i < len(keys):
                     content += "&"
 
+        if query != '':
+            if args != None:
+                content += "&"
+
+            content += query
+
         request = "POST %s HTTP/1.1\r\n" \
                   "Host: %s\r\n" \
                   "Accept: */*\r\n" \
@@ -138,6 +144,8 @@ class HTTPClient(object):
                   "Connection: Close\r\n" \
                   "\r\n" \
                   "%s\r\n" % (path, host, len(content.encode('utf-8')), content)
+
+        print(request)
 
         try:
             self.connect(host, port)
