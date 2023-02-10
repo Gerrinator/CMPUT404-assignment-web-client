@@ -46,7 +46,8 @@ class HTTPClient(object):
         return int(data.split(' ')[1])
 
     def get_headers(self,data):
-        return None
+        headers = data.split('\r\n\r\n')[0]
+        return headers
 
     def get_body(self, data):
         body = data.split('\r\n\r\n')[1]
@@ -68,7 +69,8 @@ class HTTPClient(object):
                 buffer.extend(part)
             else:
                 done = not part
-        return buffer.decode('utf-8')
+        # Some webpages don't seem to like utf-8, ISO-8859-1 seems more compatible
+        return buffer.decode('ISO-8859-1')
 
     def GET(self, url, args=None):
         parsed_url = urllib.parse.urlparse(url)
