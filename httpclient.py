@@ -133,6 +133,7 @@ class HTTPClient(object):
                   "Accept: */*\r\n" \
                   "Content-Type: application/x-www-form-urlencoded\r\n" \
                   "Content-Length: %d\r\n" \
+                  "Connection: Close\r\n" \
                   "\r\n" \
                   "%s\r\n" % (path, host, len(content.encode('utf-8')), content)
 
